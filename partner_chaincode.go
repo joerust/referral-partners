@@ -32,7 +32,7 @@ type CustomerReferral struct {
 	Departments []string `json:"departments"`
     CreateDate int64 `json:"createDate"`
 	Status string `json:"status"`
-	Mortgage Mortgage `json:"mortgage"`
+	Mortgage *Mortgage `json:"mortgage"`
 }
 
 type Mortgage struct {
@@ -65,7 +65,7 @@ func BytesToString(b []byte) string {
 func (t *PartnerChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	// Initialize the partner names
 	t.PartnerName = args[0]
-	
+	fmt.Println("Initializing chaincode for partner: " + t.PartnerName)
 	return nil, nil
 }
 
@@ -80,6 +80,8 @@ func (t *PartnerChaincode) Invoke(stub *shim.ChaincodeStub, function string, arg
 		return t.createReferral(stub, args)
 	} else if function == "updateReferralStatus" {
 		return t.updateReferralStatus(stub, args)
+	} else if function == "updateMortgateData" {
+		return t.updateMortgateData(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function)
 
@@ -207,6 +209,62 @@ func (t *PartnerChaincode) marshallReferral(referral CustomerReferral) (error, [
 	}
 	
 	return nil, valAsbytes
+}
+
+// updateMortgateData - invoke function to updateMortgageData on the referral key/value pair
+func (t *PartnerChaincode) updateMortgateData(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+	var key, value string
+	var err error
+	var referral CustomerReferral
+	var mortgageData Mortgage
+	var valAsbytes []byte
+	
+	fmt.Println("running updateMortgageData()")
+
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the key and value to set")
+	}
+
+	key = args[0] // The referral id
+	value = args[1] // The mortgage data
+	
+	// Look up the json blob that matches the current referral id
+	valAsbytes, err = stub.GetState(key)
+	
+	// Unmarshall said json blob into a referral object
+	err = json.Unmarshal(valAsbytes, &referral)
+	
+	err = json.Unmarshal([]byte(value), &mortgageData)
+	
+	// Save the current status so that it can be unindexed once we update the referral object
+	oldStatus := referral.Status
+	
+	// Set the referral status to the new value
+	referral.Status = "PENDING"
+	
+	referral.Mortgage = &mortgageData
+	
+	// Serialize the object to a JSON string to be stored in the ledger
+	valAsbytes, err = json.Marshal(referral)
+	
+	// Store the json string in the ledger
+	err = stub.PutState(key, valAsbytes) //write the variable into the chaincode state
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	// Index things by the new status
+	err = t.indexByStatus(key, referral.Status, stub)
+	
+	if err != nil {
+		return []byte("Count not index the bytes by status from the value: " + value + " on the ledger"), err
+	}
+	
+	// Remove the indexing by the status before the update
+	err = t.removeStatusReferralIndex(key, oldStatus, stub)
+	
+	return nil, nil
 }
 
 // updateReferral - invoke function to updateReferral key/value pair
