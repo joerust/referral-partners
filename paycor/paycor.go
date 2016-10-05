@@ -47,7 +47,7 @@ func main() {
 // Init resets all the things
 func (t *PartnerChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	// Initialize the partner names
-	t.PartnerName = args[0]
+	t.PartnerName = "Paycor"
 	fmt.Println("Initializing chaincode for partner: " + t.PartnerName)
 	return nil, nil
 }
