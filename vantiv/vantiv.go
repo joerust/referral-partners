@@ -163,7 +163,10 @@ func (t *PartnerChaincode) Invoke(stub *shim.ChaincodeStub, function string, arg
 		return t.createReferral(stub, args)
 	} else if function == "updateReferralStatus" {
 		return t.updateReferralStatus(stub, args)
-	} 
+	} else if function == "closeReferredDeal" {
+		return t.closeReferredDeal(stub, args)
+	}
+	
 	fmt.Println("invoke did not find func: " + function)
 
 	return nil, errors.New("Received unknown function invocation")
