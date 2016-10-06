@@ -201,53 +201,53 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 	activeStatusesAsBytes, err = t.searchByStatus("ACTIVE", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	err = json.Unmarshal(activeStatusesAsBytes, &activeReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	declinedStatusesAsBytes, err = t.searchByStatus("DECLINED", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	err = json.Unmarshal(declinedStatusesAsBytes, &declinedReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	pendingStatusesAsBytes, err = t.searchByStatus("PENDING", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	err = json.Unmarshal(pendingStatusesAsBytes, &pendingReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	closedStatusesAsBytes, err = t.searchByStatus("CLOSED", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	err = json.Unmarshal(closedStatusesAsBytes, &closedReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
-		return nil, errors.New(jsonResp)
+		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
 	if(err != nil) {
-		return nil, err
+		return []byte(err.Error()), err
 	}
 	
 	allReferrals = append(allReferrals, activeReferrals...)
