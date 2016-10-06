@@ -47,6 +47,10 @@ func main() {
 }
 
 func BytesToString(b []byte) string {
+    if b == nil {
+	    return ""
+	}
+	
     bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
     sh := reflect.StringHeader{bh.Data, bh.Len}
     return *(*string)(unsafe.Pointer(&sh))
@@ -136,64 +140,6 @@ func ProcessCommaDelimitedReferrals(delimitedReferrals string, stub *shim.Chainc
 	return []byte(referralResultSet), nil
 }
 
-func FindAllReferrals(stub *shim.ChaincodeStub, partnerName string) ([]byte, error) {
-	valAsbytes, err := stub.GetState(partnerName)
-	
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + partnerName + "\"}"
-		return nil, errors.New(jsonResp)
-	}
-	
-	valAsbytes, err = ProcessCommaDelimitedReferrals(BytesToString(valAsbytes), stub)
-	
-	if(err != nil) {
-		return nil, err
-	}
-	
-	return valAsbytes, nil
-}
-
-func SearchByStatus(status string, stub *shim.ChaincodeStub) ([]byte, error) {
-	valAsbytes, err := stub.GetState(status)
-	
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + status + "\"}"
-		return nil, errors.New(jsonResp)
-	}
-	
-	valAsbytes, err = ProcessCommaDelimitedReferrals(BytesToString(valAsbytes), stub)
-	
-	if(err != nil) {
-		return nil, err
-	}
-	
-	return valAsbytes, nil
-}
-
-
-// read - query function to read key/value pair
-func Read(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
-	var key, jsonResp string
-	var err error
-	
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the key to query")
-	}
-
-	key = args[0]
-	valAsbytes, err := stub.GetState(key)
-	
-	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + key + "\"}"
-		return []byte(jsonResp), err
-	}
-	
-	if valAsbytes == nil {
-		return []byte("Did not find entry for key: " + key), nil
-	}
-	return valAsbytes, nil
-}
-
 // Init resets all the things
 func (t *PartnerChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	// Initialize the partner names
@@ -228,6 +174,8 @@ func (t *PartnerChaincode) Query(stub *shim.ChaincodeStub, function string, args
 		return t.read(stub, args)
 	} else if function == "searchByStatus" {
 		return t.searchByStatus(args[0], stub)
+	} else if function == "readAllReferrals" {
+		return t.readAllReferrals(stub)
 	}
 	
 	fmt.Println("query did not find func: " + function)
@@ -318,6 +266,49 @@ func (t *PartnerChaincode) createReferral(stub *shim.ChaincodeStub, args []strin
 	}
 	
 	return [] byte(referralData), nil
+}
+
+func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, error) {
+	var err error
+	var activeStatusesAsBytes []byte
+	var declinedStatusesAsBytes []byte
+	var pendingStatusesAsBytes []byte
+	var closedStatusesAsBytes []byte
+	var allReferralsAsbytes []byte
+	
+	activeStatusesAsBytes, err = t.searchByStatus("ACTIVE", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	declinedStatusesAsBytes, err = t.searchByStatus("DECLINED", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	pendingStatusesAsBytes, err = t.searchByStatus("PENDING", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	closedStatusesAsBytes, err = t.searchByStatus("CLOSED", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	allReferralIds := BytesToString(activeStatusesAsBytes) + BytesToString(declinedStatusesAsBytes) + BytesToString(pendingStatusesAsBytes) + BytesToString(closedStatusesAsBytes)
+	
+	allReferralsAsbytes, err = ProcessCommaDelimitedReferrals(allReferralIds, stub)
+	
+	if(err != nil) {
+		return nil, err
+	}
+	
+	return allReferralsAsbytes, nil
 }
 
 func (t *PartnerChaincode) searchByStatus(status string, stub *shim.ChaincodeStub) ([]byte, error) {
