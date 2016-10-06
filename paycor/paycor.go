@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"unsafe"
 	"strings"
+	"strconv"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -33,8 +34,9 @@ type PaycorReferral struct {
 	ContactNumber int64 `json:"contactNumber"`
 	CreateDate int64 `json:"createDate"`
 	Status string `json:"status"`
+	BranchId string `json:"branchId"`
 	CustomerSize string `json:"customerSize"`
-	Compensation string `json:"compensation"`
+	Compensation *int64 `json:"compensation"`
 	PartnerName string `json:"partnerName"`
 	DealCriteria string `json:"dealCriteria"`
 }
@@ -191,12 +193,12 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 	var err error
 	var referral PaycorReferral
 	var referralAsBytes []byte
-	var closingCommission [3][4]string
+	var closingCommission [3][4]int64
 	var companySizeIndex,dealSizeIndex int
 	
-	closingCommission[0] = [...]string{"250","300","350","400"}
-	closingCommission[1] = [...]string{"1000","1250","1500","1750"}
-	closingCommission[2] = [...]string{"2000","2500","3000","3500"}
+	closingCommission[0] = [...]int64{250,300,350,400}
+	closingCommission[1] = [...]int64{1000,1250,1500,1750}
+	closingCommission[2] = [...]int64{2000,2500,3000,3500}
 	
 	fmt.Println("running closeReferredDeal()")
 
@@ -238,9 +240,9 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 		companySizeIndex = 3
 	}
 	
-	fmt.Println("Paying out a commission of: " + closingCommission[dealSizeIndex][companySizeIndex])
+	fmt.Println("Paying out a commission of: " + strconv.FormatInt(closingCommission[dealSizeIndex][companySizeIndex], 10))
 	
-	referral.Compensation = closingCommission[dealSizeIndex][companySizeIndex]
+	referral.Compensation = &(closingCommission[dealSizeIndex][companySizeIndex])
 	
 	
 	// Serialize the object to a JSON string to be stored in the ledger
