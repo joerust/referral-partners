@@ -208,7 +208,7 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 	dealCriteria = args[1] // The new deal criteria
 	
 	// Look up the json blob that matches the current referral id
-	referralAsBytes, err = stub.GetState(dealCriteria)
+	referralAsBytes, err = stub.GetState(referralId)
 	
 	// Unmarshall said json blob into a referral object
 	err = json.Unmarshal(referralAsBytes, &referral)
