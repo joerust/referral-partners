@@ -198,48 +198,56 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 	var closedReferrals []VantivReferral
 	var allReferrals []VantivReferral
 	
+	fmt.Println("Reading active referrals")
 	activeStatusesAsBytes, err = t.searchByStatus("ACTIVE", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Unmarshalling active referrals")
 	err = json.Unmarshal(activeStatusesAsBytes, &activeReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Reading declined referrals")
 	declinedStatusesAsBytes, err = t.searchByStatus("DECLINED", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Unmarshalling declined referrals")
 	err = json.Unmarshal(declinedStatusesAsBytes, &declinedReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Reading pending referrals")
 	pendingStatusesAsBytes, err = t.searchByStatus("PENDING", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Unmarshalling pending referrals")
 	err = json.Unmarshal(pendingStatusesAsBytes, &pendingReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Reading closed referrals")
 	closedStatusesAsBytes, err = t.searchByStatus("CLOSED", stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
 		return []byte(err.Error()), errors.New(jsonResp)
 	}
 	
+	fmt.Println("Unmarshalling closed referrals")
 	err = json.Unmarshal(closedStatusesAsBytes, &closedReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
@@ -250,10 +258,22 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 		return []byte(err.Error()), err
 	}
 	
+	fmt.Println("Appending active referrals")
 	allReferrals = append(allReferrals, activeReferrals...)
+	
+	fmt.Println("Appending declined referrals")
 	allReferrals = append(allReferrals, declinedReferrals...)
+	
+	fmt.Println("Appending pending referrals")
 	allReferrals = append(allReferrals, pendingReferrals...)
+	
+	fmt.Println("Appending closed referrals")
 	allReferrals = append(allReferrals, closedReferrals...)
+	
+	allReferralsAsbytes, err = json.Marshal(allReferrals)
+	if(err != nil) {
+		return []byte(err.Error()), err
+	}
 	
 	return allReferralsAsbytes, nil
 }
