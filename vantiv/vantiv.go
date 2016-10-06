@@ -192,8 +192,19 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 	var pendingStatusesAsBytes []byte
 	var closedStatusesAsBytes []byte
 	var allReferralsAsbytes []byte
+	var activeReferrals []VantivReferral
+	var declinedReferrals []VantivReferral
+	var pendingReferrals []VantivReferral
+	var closedReferrals []VantivReferral
+	var allReferrals []VantivReferral
 	
 	activeStatusesAsBytes, err = t.searchByStatus("ACTIVE", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	err = json.Unmarshal(activeStatusesAsBytes, &activeReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for ACTIVE\"}"
 		return nil, errors.New(jsonResp)
@@ -205,7 +216,19 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 		return nil, errors.New(jsonResp)
 	}
 	
+	err = json.Unmarshal(declinedStatusesAsBytes, &declinedReferrals)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for DECLINED\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
 	pendingStatusesAsBytes, err = t.searchByStatus("PENDING", stub)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
+		return nil, errors.New(jsonResp)
+	}
+	
+	err = json.Unmarshal(pendingStatusesAsBytes, &pendingReferrals)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for PENDING\"}"
 		return nil, errors.New(jsonResp)
@@ -217,35 +240,20 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 		return nil, errors.New(jsonResp)
 	}
 	
-	declinedStatusesString := BytesToString(declinedStatusesAsBytes)
-	pendingStatusesString := BytesToString(pendingStatusesAsBytes)
-	closedStatusesString := BytesToString(closedStatusesAsBytes)
-	
-	allReferralIds := BytesToString(activeStatusesAsBytes)
-	
-	if allReferralIds != "" && declinedStatusesString != "" {
-		allReferralIds = allReferralIds + "," + declinedStatusesString
-	} else {
-		allReferralIds = allReferralIds + declinedStatusesString
+	err = json.Unmarshal(closedStatusesAsBytes, &closedReferrals)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for CLOSED\"}"
+		return nil, errors.New(jsonResp)
 	}
-	
-	if allReferralIds != "" && pendingStatusesString != "" {
-		allReferralIds = allReferralIds + "," + pendingStatusesString
-	} else {
-		allReferralIds = allReferralIds + pendingStatusesString
-	}
-	
-	if allReferralIds != "" && closedStatusesString != "" {
-		allReferralIds = allReferralIds + "," + closedStatusesString
-	} else {
-		allReferralIds = allReferralIds + closedStatusesString
-	}
-	
-	allReferralsAsbytes, err = ProcessCommaDelimitedReferrals(allReferralIds, stub)
 	
 	if(err != nil) {
 		return nil, err
 	}
+	
+	allReferrals = append(allReferrals, activeReferrals...)
+	allReferrals = append(allReferrals, declinedReferrals...)
+	allReferrals = append(allReferrals, pendingReferrals...)
+	allReferrals = append(allReferrals, closedReferrals...)
 	
 	return allReferralsAsbytes, nil
 }
