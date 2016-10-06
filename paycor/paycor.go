@@ -159,7 +159,10 @@ func (t *PartnerChaincode) Invoke(stub *shim.ChaincodeStub, function string, arg
 		return t.createReferral(stub, args)
 	} else if function == "updateReferralStatus" {
 		return t.updateReferralStatus(stub, args)
-	} 
+	} else if function == "closeReferredDeal" {
+		return t.closeReferredDeal(stub, args)
+	}
+	
 	fmt.Println("invoke did not find func: " + function)
 
 	return nil, errors.New("Received unknown function invocation")
@@ -181,6 +184,86 @@ func (t *PartnerChaincode) Query(stub *shim.ChaincodeStub, function string, args
 	fmt.Println("query did not find func: " + function)
 
 	return nil, errors.New("Received unknown function query")
+}
+
+func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+	var referralId, dealCriteria string
+	var err error
+	var referral PaycorReferral
+	var referralAsBytes []byte
+	var closingCommission [3][4]string
+	var companySizeIndex,dealSizeIndex int
+	
+	closingCommission[0] = [...]string{"250","300","350","400"}
+	closingCommission[1] = [...]string{"1000","1250","1500","1750"}
+	closingCommission[2] = [...]string{"2000","2500","3000","3500"}
+	
+	fmt.Println("running closeReferredDeal()")
+
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the key and value to set")
+	}
+
+	referralId = args[0] // The referral id
+	dealCriteria = args[1] // The new deal criteria
+	
+	// Look up the json blob that matches the current referral id
+	referralAsBytes, err = stub.GetState(dealCriteria)
+	
+	// Unmarshall said json blob into a referral object
+	err = json.Unmarshal(referralAsBytes, &referral)
+	
+	// Save the current status so that it can be unindexed once we update the referral object
+	oldStatus := referral.Status
+	
+	// Set the referral status to the new value
+	referral.Status = "CLOSED"
+	referral.DealCriteria = &dealCriteria
+	
+	if dealCriteria == "SMALL" {
+	   dealSizeIndex = 0
+	} else if dealCriteria == "MID" {
+		dealSizeIndex = 1
+	} else {
+		dealSizeIndex = 2
+	}
+	
+	if *(referral.CustomerSize) == "MICRO" {
+		companySizeIndex = 0
+	} else if *(referral.CustomerSize) == "SMALL" {
+		companySizeIndex = 1
+	} else if *(referral.CustomerSize) == "MID" {
+		companySizeIndex = 2
+	} else {
+		companySizeIndex = 3
+	}
+	
+	fmt.Println("Paying out a commission of: " + closingCommission[dealSizeIndex][companySizeIndex])
+	
+	referral.Compensation = &(closingCommission[dealSizeIndex][companySizeIndex])
+	
+	
+	// Serialize the object to a JSON string to be stored in the ledger
+	referralAsBytes, err = json.Marshal(referral)
+	
+	// Store the json string in the ledger
+	err = stub.PutState(referralId, referralAsBytes) //write the variable into the chaincode state
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	// Index things by the new status
+	err = IndexByStatus(referralId, referral.Status, stub)
+	
+	if err != nil {
+		return []byte("Count not index the bytes by status from the value: " + referral.Status + " on the ledger"), err
+	}
+	
+	// Remove the indexing by the status before the update
+	err = RemoveStatusReferralIndex(referralId, oldStatus, stub)
+	
+	return referralAsBytes, nil
 }
 
 // updateReferral - invoke function to updateReferral key/value pair
