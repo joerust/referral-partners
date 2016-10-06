@@ -33,10 +33,10 @@ type PaycorReferral struct {
 	ContactNumber int64 `json:"contactNumber"`
 	CreateDate int64 `json:"createDate"`
 	Status string `json:"status"`
-	CustomerSize *string `json:"customerSize"`
-	Compensation *string `json:"compensation"`
-	PartnerName *string `json:"partnerName"`
-	DealCriteria *string `json:"dealCriteria"`
+	CustomerSize string `json:"customerSize"`
+	Compensation string `json:"compensation"`
+	PartnerName string `json:"partnerName"`
+	DealCriteria string `json:"dealCriteria"`
 }
 
 func main() {
@@ -218,7 +218,7 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 	
 	// Set the referral status to the new value
 	referral.Status = "CLOSED"
-	referral.DealCriteria = &dealCriteria
+	referral.DealCriteria = dealCriteria
 	
 	if dealCriteria == "SMALL" {
 	   dealSizeIndex = 0
@@ -228,11 +228,11 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 		dealSizeIndex = 2
 	}
 	
-	if *(referral.CustomerSize) == "MICRO" {
+	if referral.CustomerSize == "MICRO" {
 		companySizeIndex = 0
-	} else if *(referral.CustomerSize) == "SMALL" {
+	} else if referral.CustomerSize == "SMALL" {
 		companySizeIndex = 1
-	} else if *(referral.CustomerSize) == "MID" {
+	} else if referral.CustomerSize == "MID" {
 		companySizeIndex = 2
 	} else {
 		companySizeIndex = 3
@@ -240,7 +240,7 @@ func (t *PartnerChaincode) closeReferredDeal(stub *shim.ChaincodeStub, args []st
 	
 	fmt.Println("Paying out a commission of: " + closingCommission[dealSizeIndex][companySizeIndex])
 	
-	referral.Compensation = &(closingCommission[dealSizeIndex][companySizeIndex])
+	referral.Compensation = closingCommission[dealSizeIndex][companySizeIndex]
 	
 	
 	// Serialize the object to a JSON string to be stored in the ledger
