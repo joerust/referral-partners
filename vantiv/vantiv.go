@@ -270,11 +270,14 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 	fmt.Println("Appending closed referrals")
 	allReferrals = append(allReferrals, closedReferrals...)
 	
+	fmt.Println("Marshalling all referrals")
 	allReferralsAsbytes, err = json.Marshal(allReferrals)
 	if(err != nil) {
+		fmt.Println(err.Error())
 		return []byte(err.Error()), err
 	}
 	
+	fmt.Println("Returing all referrals: " + BytesToString(allReferralsAsbytes))
 	return allReferralsAsbytes, nil
 }
 
