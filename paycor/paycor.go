@@ -300,7 +300,29 @@ func (t *PartnerChaincode) readAllReferrals(stub *shim.ChaincodeStub) ([]byte, e
 		return nil, errors.New(jsonResp)
 	}
 	
-	allReferralIds := BytesToString(activeStatusesAsBytes) + BytesToString(declinedStatusesAsBytes) + BytesToString(pendingStatusesAsBytes) + BytesToString(closedStatusesAsBytes)
+	declinedStatusesString := BytesToString(declinedStatusesAsBytes)
+	pendingStatusesString := BytesToString(pendingStatusesAsBytes)
+	closedStatusesString := BytesToString(closedStatusesAsBytes)
+	
+	allReferralIds := BytesToString(activeStatusesAsBytes)
+	
+	if allReferralIds != "" && declinedStatusesString != "" {
+		allReferralIds = allReferralIds + "," + declinedStatusesString
+	} else {
+		allReferralIds = allReferralIds + declinedStatusesString
+	}
+	
+	if allReferralIds != "" && pendingStatusesString != "" {
+		allReferralIds = allReferralIds + "," + pendingStatusesString
+	} else {
+		allReferralIds = allReferralIds + pendingStatusesString
+	}
+	
+	if allReferralIds != "" && closedStatusesString != "" {
+		allReferralIds = allReferralIds + "," + closedStatusesString
+	} else {
+		allReferralIds = allReferralIds + closedStatusesString
+	}
 	
 	allReferralsAsbytes, err = ProcessCommaDelimitedReferrals(allReferralIds, stub)
 	
